@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"time"
 	"unsafe"
 )
 
@@ -34,4 +35,8 @@ func StringToBytes(s string) (byteArrayResult []byte) {
 
 func BytesToString(bs []byte) string {
 	return *(*string)(unsafe.Pointer(&bs))
+}
+
+func DateFormat(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
 }

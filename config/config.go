@@ -12,8 +12,10 @@ import (
 var ConfigFileName = "git_k8s_config.yaml"
 
 type Config struct {
-	Build Build `json:"build" yaml:"build"`
-	Git   Git   `json:"git" yaml:"git"`
+	Build  Build  `json:"build" yaml:"build"`
+	Git    Git    `json:"git" yaml:"git"`
+	Docker Docker `json:"docker" yaml:"docker"`
+	K8s    K8s    `json:"kubernetes" yaml:"kubernetes"`
 }
 
 type Build struct {
@@ -40,7 +42,23 @@ type Git struct {
 	//Local 克隆到本地的路径
 	Local string `json:"local" yaml:"local,omitempty"`
 	//Repository 本地仓库名称
-	Repository string
+	Repository string `json:"repository" yaml:"local,omitempty"`
+}
+
+type Docker struct {
+	//Username 登录docker的用户名
+	Username string `json:"username" yaml:"username,omitempty"`
+	//Password 登录docker的密码
+	Password string `json:"password" yaml:"password,omitempty"`
+	//RemotePath docker远端地址
+	//RemotePath string `json:"remotePath" yaml:"remotePath,omitempty"`
+	//Repository docker推送的仓库名称
+	Repository string `json:"repository" yaml:"repository,omitempty"`
+}
+
+type K8s struct {
+	Namespace string
+	Labels    map[string][]string
 }
 
 //Load 从配置文件中加载配置
@@ -104,4 +122,3 @@ func createIfNotExists() error {
 	}
 	return nil
 }
-

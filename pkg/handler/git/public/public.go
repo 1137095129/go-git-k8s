@@ -6,7 +6,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/wang1137095129/go-git-k8s/config"
-	"github.com/wang1137095129/go-git-k8s/utils"
 	"os"
 	"path/filepath"
 	"sync"
@@ -48,10 +47,14 @@ func (p *PublicGitHandler) OpenRepository(c *config.Config) (*git.Repository, er
 		}
 
 		head, err := repository.Head()
-		utils.CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 
 		commitIter, err := repository.Log(&git.LogOptions{From: head.Hash()})
-		utils.CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 
 		t := time.Time{}
 		err = commitIter.ForEach(func(commit *object.Commit) error {
@@ -60,7 +63,9 @@ func (p *PublicGitHandler) OpenRepository(c *config.Config) (*git.Repository, er
 			}
 			return nil
 		})
-		utils.CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 		*p.lastPullTime = t
 
 		return repository, nil
@@ -76,22 +81,32 @@ func (p *PublicGitHandler) OpenRepository(c *config.Config) (*git.Repository, er
 	err = repository.Fetch(&git.FetchOptions{
 		RemoteName: c.Git.Remote,
 	})
-	utils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	revision, err := repository.ResolveRevision(plumbing.Revision(fmt.Sprintf("%s/%s", c.Git.Remote, c.Git.Branch)))
-	utils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	commit, err := repository.CommitObject(*revision)
-	utils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	if p.lastPullTime.Before(commit.Committer.When) {
 		worktree, err := repository.Worktree()
-		utils.CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 		err = worktree.Pull(&git.PullOptions{
 			RemoteName:    c.Git.Remote,
 			ReferenceName: plumbing.NewBranchReferenceName(c.Git.Branch),
 		})
-		utils.CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 		*p.lastPullTime = commit.Committer.When
 	}
 
