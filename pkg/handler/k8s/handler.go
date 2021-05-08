@@ -38,9 +38,7 @@ func createSelector(c config.Config) (labels.Selector, error) {
 
 	for key, value := range c.K8s.Labels {
 		var newString = sets.NewString()
-		for _, s := range value {
-			newString.Insert(s)
-		}
+		newString.Insert(value)
 		newRequirement, err := labels.NewRequirement(key, selection.In, newString)
 		if err != nil {
 			return nil, err
@@ -91,6 +89,8 @@ func (h Handle) getPodList(c *config.Config) (*api_v1.PodList, error) {
 
 func (h Handle) CheckContainerExist(c *config.Config) (bool, error) {
 
+	podList, err := h.getPodList(c)
+
 	if err != nil {
 		return false, err
 	}
@@ -101,8 +101,39 @@ func (h Handle) CheckContainerExist(c *config.Config) (bool, error) {
 	return true, nil
 }
 
-func (h *Handle) Refresh(c config.Config) {
+func (h *Handle) Refresh(c *config.Config) (*api_v1.Pod, error) {
 	pod := &api_v1.Pod{}
+	podList, err := h.getPodList(c)
+	if err != nil {
+		return nil, err
+	}
+	pods := podList.Items
+	p := pods[0]
+	//
+	p.Spec.Containers[0].Image = ""
+	return h.client.Pods(c.K8s.Namespace).Update(pod)
+}
 
-	h.client.Pods(c.K8s.Namespace).Update()
+func (h *Handle) Create(c *config.Config) (*api_v1.Pod, error) {
+	p := &api_v1.Pod{}
+	p.Kind = "Pod"
+	p.Namespace = c.K8s.Namespace
+	p.Labels = c.K8s.Labels
+	p.APIVersion = "v1"
+	p.Name = c.Git.Repository
+
+	container := &api_v1.Container{}
+	container.Image = ""
+	ports := make([]api_v1.ContainerPort, len(c.Build.Expose))
+	for _, expose := range c.Build.Expose {
+		port := &api_v1.ContainerPort{}
+		port.HostPort = int32(expose)
+		port.ContainerPort = int32(expose)
+		ports = append(ports, *port)
+	}
+	containers := make([]api_v1.Container, 1)
+	containers = append(containers, *container)
+	p.Spec.Containers = containers
+
+	return h.client.Pods(c.K8s.Namespace).Create(p)
 }

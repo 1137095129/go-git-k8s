@@ -58,7 +58,7 @@ type Docker struct {
 
 type K8s struct {
 	Namespace string
-	Labels    map[string][]string
+	Labels    map[string]string
 }
 
 //Load 从配置文件中加载配置
